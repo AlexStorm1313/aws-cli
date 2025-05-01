@@ -1,40 +1,130 @@
-#
-name: Github container registry
-
-# This workflow runs when any of the following occur:
-# - A push is made to a branch called `main` or `seed`
+name: AWS CLI Container Update
+# This workflow monitors the official AWS CLI container image and rebuilds our image when updates occur
+# It also runs when:
+# - A push is made to the main branch
 # - A tag starting with "v" is created
-# - A pull request is created or updated
+
 on:
+  # Run on a schedule (check for base image updates daily at 2AM UTC)
+  schedule:
+    - cron: '0 2 * * *'
+  
+  # Standard triggers from original workflow
   push:
     branches:
       - main
     tags:
       - v*
+  
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: 'Force rebuild even if no image changes detected'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
 env:
   IMAGE_NAME: aws-cli
-#
+  BASE_IMAGE: public.ecr.aws/aws-cli/aws-cli
+  BASE_TAG: latest
+
 jobs:
-  # This pushes the image to GitHub Packages.
-  push:
+  check-aws-image:
+    name: Check AWS CLI Image for Updates
     runs-on: ubuntu-latest
+    outputs:
+      image_updated: ${{ steps.check-image.outputs.image_updated }}
+      
+    # Skip this check if we're doing a push to main or a tag push
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-region: us-east-1
+          # Using anonymous access for public ECR
+      
+      - name: Check for AWS CLI image updates
+        id: check-image
+        run: |
+          # Get the latest digest for the AWS CLI image
+          LATEST_DIGEST=$(aws ecr-public describe-images --repository-name aws-cli/aws-cli --region us-east-1 --query 'imageDetails[?imageTags[0]==`latest`].imageDigest' --output text)
+          echo "Latest digest: $LATEST_DIGEST"
+          
+          # Check if we've stored the previous digest
+          if [ -f ".github/aws-cli-digest" ]; then
+            STORED_DIGEST=$(cat .github/aws-cli-digest)
+            echo "Stored digest: $STORED_DIGEST"
+            
+            if [ "$LATEST_DIGEST" != "$STORED_DIGEST" ]; then
+              echo "AWS CLI image has been updated"
+              echo "image_updated=true" >> $GITHUB_OUTPUT
+            else
+              echo "No changes in AWS CLI image"
+              echo "image_updated=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            # First run, create directory if it doesn't exist
+            mkdir -p .github
+            echo "First run, will trigger build"
+            echo "image_updated=true" >> $GITHUB_OUTPUT
+          fi
+          
+          # Store the latest digest for future comparisons
+          echo "$LATEST_DIGEST" > .github/aws-cli-digest
+          
+          # Commit the updated digest file
+          git config --local user.email "github-actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add .github/aws-cli-digest
+          git commit -m "Update AWS CLI image digest" || echo "No changes to commit"
+          git push || echo "Could not push changes"
+
+  push:
+    name: Build and Push Image
+    runs-on: ubuntu-latest
+    # Run this job if:
+    # - This is a push to main or a tag push, OR
+    # - The base image was updated in the check job, OR
+    # - A manual rebuild was forced
+    needs: [check-aws-image]
+    if: >
+      github.event_name == 'push' || 
+      (needs.check-aws-image.outputs.image_updated == 'true') || 
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.force_rebuild == 'true')
     permissions:
       packages: write
       contents: read
-      #
+      
     steps:
       - uses: actions/checkout@v4
-
+      
       - name: Build image
-        run: docker build . --file Containerfile --tag $IMAGE_NAME --label "runnumber=${GITHUB_RUN_ID}"
-
-      - name: Log in to registry
+        run: |
+          # Pull latest AWS CLI image first to ensure we're building from latest
+          docker pull ${{ env.BASE_IMAGE }}:${{ env.BASE_TAG }}
+          
+          # Build our custom image
+          docker build . --file Containerfile \
+            --tag $IMAGE_NAME \
+            --label "runnumber=${GITHUB_RUN_ID}" \
+            --label "base_image_updated=$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          
+      - name: Log in to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-        #
+        
       - name: Push image
         run: |
           IMAGE_ID=ghcr.io/${{ github.repository_owner }}/$IMAGE_NAME
-
           # This changes all uppercase characters to lowercase.
           IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
           # This strips the git ref prefix from the version.
@@ -47,3 +137,11 @@ jobs:
           echo VERSION=$VERSION
           docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
+          
+          # Also push a date-tagged version when triggered by update detection
+          if [[ "${{ github.event_name }}" == "schedule" || "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            DATE_TAG=$(date -u +'%Y%m%d')
+            docker tag $IMAGE_NAME $IMAGE_ID:$DATE_TAG
+            docker push $IMAGE_ID:$DATE_TAG
+            echo "Pushed $IMAGE_ID:$DATE_TAG"
+          fi
