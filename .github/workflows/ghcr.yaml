@@ -47,17 +47,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v3
-        with:
-          aws-region: us-east-1
-          # Using anonymous access for public ECR
+      - name: Install AWS CLI
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install
+          aws --version
       
       - name: Check for AWS CLI image updates
         id: check-image
         run: |
-          # Get the latest digest for the AWS CLI image
-          LATEST_DIGEST=$(aws ecr-public describe-images --repository-name aws-cli/aws-cli --region us-east-1 --query 'imageDetails[?imageTags[0]==`latest`].imageDigest' --output text)
+          # Use Docker to pull and inspect the image instead of AWS CLI
+          docker pull ${{ env.BASE_IMAGE }}:${{ env.BASE_TAG }}
+          LATEST_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ env.BASE_IMAGE }}:${{ env.BASE_TAG }} | cut -d '@' -f 2)
           echo "Latest digest: $LATEST_DIGEST"
           
           # Check if we've stored the previous digest
