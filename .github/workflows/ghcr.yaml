@@ -40,8 +40,8 @@ jobs:
     outputs:
       image_updated: ${{ steps.check-image.outputs.image_updated }}
       
-    # Skip this check if we're doing a push to main or a tag push
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    # # Skip this check if we're doing a push to main or a tag push
+    # if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     
     steps:
       - name: Checkout repository
