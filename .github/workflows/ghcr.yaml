@@ -41,11 +41,17 @@ jobs:
       image_updated: ${{ steps.check-image.outputs.image_updated }}
       
     # Skip this check if we're doing a push to main or a tag push
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    # if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-region: us-east-1
+          # Using anonymous access for public ECR
       
       - name: Check for AWS CLI image updates
         id: check-image
