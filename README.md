@@ -24,7 +24,7 @@ Add the following to your `.bashrc`, `.zshrc`, or equivalent shell configuration
 
 ```bash
 # Create an alias for the containerized AWS CLI
-alias aws="podman run --privileged --rm -i -v ~/.aws:/root/.aws -v $(pwd):/aws ghcr.io/alexstorm1313/aws-cli:latest $@"
+alias aws="podman run --privileged --rm -it -v ~/.aws:/root/.aws -v $(pwd):/aws --env AWS_ACCESS_KEY_ID --env AWS_SECRET_ACCESS_KEY --env AWS_SESSION_TOKEN --env AWS_DEFAULT_REGION --env AWS_DEFAULT_OUTPUT --env AWS_PROFILE --env AWS_CA_BUNDLE --env AWS_SHARED_CREDENTIALS_FILE --env AWS_CONFIG_FILE --env AWS_ROLE_ARN --env AWS_ROLE_SESSION_NAME --env AWS_WEB_IDENTITY_TOKEN_FILE --env AWS_ROLE_ARN --env AWS_METADATA_SERVICE_TIMEOUT --env AWS_METADATA_SERVICE_NUM_ATTEMPTS --env AWS_STS_REGIONAL_ENDPOINTS --env AWS_MAX_ATTEMPTS --env AWS_RETRY_MODE --env AWS_EC2_METADATA_DISABLED --env AWS_SDK_UA_APP_ID ghcr.io/alexstorm1313/aws-cli:latest $@"
 
 # Enable tab completion for the containerized AWS CLI
 complete -C "podman run --rm -i --entrypoint /usr/local/bin/aws_completer -e COMP_LINE -e COMP_POINT ghcr.io/alexstorm1313/aws-cli:latest $@" aws
@@ -34,7 +34,7 @@ complete -C "podman run --rm -i --entrypoint /usr/local/bin/aws_completer -e COM
 
 ```bash
 # Create an alias for the containerized AWS CLI
-alias aws="docker run --privileged --rm -i -v ~/.aws:/root/.aws -v $(pwd):/aws ghcr.io/alexstorm1313/aws-cli:latest $@"
+alias aws="docker run --privileged --rm -it -v ~/.aws:/root/.aws -v $(pwd):/aws --env AWS_ACCESS_KEY_ID --env AWS_SECRET_ACCESS_KEY --env AWS_SESSION_TOKEN --env AWS_DEFAULT_REGION --env AWS_DEFAULT_OUTPUT --env AWS_PROFILE --env AWS_CA_BUNDLE --env AWS_SHARED_CREDENTIALS_FILE --env AWS_CONFIG_FILE --env AWS_ROLE_ARN --env AWS_ROLE_SESSION_NAME --env AWS_WEB_IDENTITY_TOKEN_FILE --env AWS_ROLE_ARN --env AWS_METADATA_SERVICE_TIMEOUT --env AWS_METADATA_SERVICE_NUM_ATTEMPTS --env AWS_STS_REGIONAL_ENDPOINTS --env AWS_MAX_ATTEMPTS --env AWS_RETRY_MODE --env AWS_EC2_METADATA_DISABLED --env AWS_SDK_UA_APP_ID ghcr.io/alexstorm1313/aws-cli:latest $@"
 
 # Enable tab completion for the containerized AWS CLI
 complete -C "docker run --rm -i --entrypoint /usr/local/bin/aws_completer -e COMP_LINE -e COMP_POINT ghcr.io/alexstorm1313/aws-cli:latest $@" aws
@@ -101,7 +101,7 @@ Then update your alias to use your local image:
 
 ```bash
 # Create an alias for the containerized AWS CLI
-alias aws="podman run --privileged --rm -i -v ~/.aws:/root/.aws -v $(pwd):/aws localhost/aws-cli:latest $@"
+alias aws="podman run --privileged --rm -it -v ~/.aws:/root/.aws -v $(pwd):/aws --env AWS_ACCESS_KEY_ID --env AWS_SECRET_ACCESS_KEY --env AWS_SESSION_TOKEN --env AWS_DEFAULT_REGION --env AWS_DEFAULT_OUTPUT --env AWS_PROFILE --env AWS_CA_BUNDLE --env AWS_SHARED_CREDENTIALS_FILE --env AWS_CONFIG_FILE --env AWS_ROLE_ARN --env AWS_ROLE_SESSION_NAME --env AWS_WEB_IDENTITY_TOKEN_FILE --env AWS_ROLE_ARN --env AWS_METADATA_SERVICE_TIMEOUT --env AWS_METADATA_SERVICE_NUM_ATTEMPTS --env AWS_STS_REGIONAL_ENDPOINTS --env AWS_MAX_ATTEMPTS --env AWS_RETRY_MODE --env AWS_EC2_METADATA_DISABLED --env AWS_SDK_UA_APP_ID localhost/aws-cli:latest $@"
 
 # Enable tab completion for the containerized AWS CLI
 complete -C "podman run --rm -i --entrypoint /usr/local/bin/aws_completer -e COMP_LINE -e COMP_POINT localhost/aws-cli:latest $@" aws
@@ -111,7 +111,7 @@ complete -C "podman run --rm -i --entrypoint /usr/local/bin/aws_completer -e COM
 
 ```bash
 # Create an alias for the containerized AWS CLI
-alias aws="docker run --privileged --rm -i -v ~/.aws:/root/.aws -v $(pwd):/aws localhost/aws-cli:latest $@"
+alias aws="docker run --privileged --rm -it -v ~/.aws:/root/.aws -v $(pwd):/aws --env AWS_ACCESS_KEY_ID --env AWS_SECRET_ACCESS_KEY --env AWS_SESSION_TOKEN --env AWS_DEFAULT_REGION --env AWS_DEFAULT_OUTPUT --env AWS_PROFILE --env AWS_CA_BUNDLE --env AWS_SHARED_CREDENTIALS_FILE --env AWS_CONFIG_FILE --env AWS_ROLE_ARN --env AWS_ROLE_SESSION_NAME --env AWS_WEB_IDENTITY_TOKEN_FILE --env AWS_ROLE_ARN --env AWS_METADATA_SERVICE_TIMEOUT --env AWS_METADATA_SERVICE_NUM_ATTEMPTS --env AWS_STS_REGIONAL_ENDPOINTS --env AWS_MAX_ATTEMPTS --env AWS_RETRY_MODE --env AWS_EC2_METADATA_DISABLED --env AWS_SDK_UA_APP_ID localhost/aws-cli:latest $@"
 
 # Enable tab completion for the containerized AWS CLI
 complete -C "docker run --rm -i --entrypoint /usr/local/bin/aws_completer -e COMP_LINE -e COMP_POINT localhost/aws-cli:latest $@" aws
