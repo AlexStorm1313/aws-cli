@@ -46,12 +46,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v3
-        with:
-          aws-region: us-east-1
-          # Using anonymous access for public ECR
       
       - name: Check for AWS CLI image updates
         id: check-image
